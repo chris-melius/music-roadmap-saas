@@ -1,0 +1,75 @@
+@page "/add-student"
+@using MusicRoadmap.Domain.Entities
+@using MusicRoadmap.Client.Services
+
+@inject StudentService StudentService
+@inject NavigationManager Nav
+
+<h3>Add New Student</h3>
+
+<EditForm Model="@newStudentDto" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    
+    <div class="mb-3">
+        <label>First Name</label>
+        <InputText @bind-Value="newStudentDto.FirstName" class="form-control" />
+        <ValidationMessage For="@(() => newStudentDto.FirstName)" class="text-danger small mt-1" />
+    </div>
+    <div class="mb-3">
+        <label>Last Name</label>
+        <InputText @bind-Value="newStudentDto.LastName" class="form-control" />
+        <ValidationMessage For="@(() => newStudentDto.LastName)" class="text-danger small mt-1" />
+    </div>
+    <div class="mb-3">
+        <label>Initial Skill Level</label>
+        <InputText @bind-Value="newStudentDto.SkillLevel" class="form-control" />
+        <ValidationMessage For="@(() => newStudentDto.SkillLevel)" class="text-danger small mt-1" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Current Repertoire</label>
+        <InputTextArea @bind-Value="newStudentDto.CurrentRepertoire" class="form-control" rows="2" placeholder="e.g., Faber Level 2, Minuet in G" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Target Pieces</label>
+        <InputTextArea @bind-Value="newStudentDto.TargetPieces" class="form-control" rows="2" placeholder="e.g., Beethoven's Moonlight Sonata, Chopin's Nocturne in E-flat" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Specific Goals</label>
+        <InputTextArea @bind-Value="newStudentDto.StudentGoals" class="form-control" rows="2" placeholder="e.g., Play in the spring recital, improve hand independence" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Practice Commitment (Minutes Per Week)</label>
+        <InputNumber @bind-Value="newStudentDto.MinutesPerWeekCommitment" class="form-control" />
+        <div class="form-text">Tip: 90 minutes is a great baseline for beginners (e.g., 30 mins x 3 days).</div>
+    </div>
+
+    <button type="submit" class="btn btn-success">Save Student</button>
+    <button type="button" class="btn btn-secondary ms-2" @onclick="Cancel">
+            Cancel
+        </button>    
+</EditForm>
+
+@code {
+    private StudentDto newStudentDto = new StudentDto { SkillLevel = "Beginner" };
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("/students");
+    }
+    private async Task HandleSubmit()
+    {
+        // For now, we hardcode InstructorId until we build the Login system
+        newStudentDto.InstructorId = "1"; 
+
+        var success = await StudentService.AddStudentAsync(newStudentDto);
+        
+        if (success)
+        {
+            Nav.NavigateTo("/students"); // Go back to the dashboard
+        }
+    }
+}

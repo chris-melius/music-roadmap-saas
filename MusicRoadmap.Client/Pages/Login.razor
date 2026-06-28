@@ -1,0 +1,112 @@
+@page "/login"
+@using MusicRoadmap.Shared.DTOs
+@using MusicRoadmap.Client.Services
+@inject AuthService AuthService
+@inject LocalStorageService Storage
+@inject NavigationManager Navigation
+
+@inject MusicRoadmap.Client.Security.CustomAuthenticationStateProvider AuthStateProvider
+
+
+@attribute [AllowAnonymous]
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white text-center py-3">
+                    <h4 class="mb-0">Instructor Login</h4>
+                </div>
+                <div class="card-body p-4">
+                    <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">Email</label>
+                            <InputText @bind-Value="loginModel.Email" class="form-control" placeholder="name@example.com" />
+                            <ValidationMessage For="@(() => loginModel.Email)" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label font-weight-bold">Password</label>
+                            <InputText @bind-Value="loginModel.Password" type="password" class="form-control" placeholder="••••••••" />
+                            <ValidationMessage For="@(() => loginModel.Password)" class="text-danger small" />
+                        </div>
+
+                        <button type="submit" class="btn btn-dark w-100 py-2 shadow-sm" disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span>Authenticating...</span>
+                            }
+                            else
+                            {
+                                <span>Login</span>
+                            }
+                        </button>
+                    </EditForm>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3 small shadow-sm">
+                            <i class="bi bi-exclamation-circle-fill me-2"></i> @errorMessage
+                        </div>
+                    }
+                </div>
+                <div class="card-footer bg-light text-center py-3">
+                    <span class="text-muted small">Don't have an account?</span>
+                    <a href="/register" class="ms-2 text-decoration-none small">Sign up</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginDto loginModel = new();
+    private bool isSubmitting = false;
+    private string? errorMessage;
+
+    private async Task HandleLogin()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+
+        try
+        {
+            var response = await AuthService.Login(loginModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+                if (result != null)
+                {
+                    // This sets local storage AND broadcasts the new UI identity immediately
+                    await AuthStateProvider.NotifyUserLoginAsync(result.AccessToken, result.RefreshToken);
+                    
+                    // Redirect to your main secure dashboard
+                    Navigation.NavigateTo("/students");
+                }
+            }
+            else
+            {
+                errorMessage = "Invalid email or password. Please try again.";
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "A connection error occurred. Please ensure the API is running.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    // Matches the JSON returned by your AuthController
+    public class LoginResponse 
+    { 
+        public string Token { get; set; } = string.Empty; 
+        public string Email { get; set; } = string.Empty;
+    }
+}

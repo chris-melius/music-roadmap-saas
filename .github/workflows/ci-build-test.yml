@@ -1,0 +1,56 @@
+name: .NET 10 Multi-Tenant CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test-and-deploy:
+    name: Build, Test, and Push Containers to ACR
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Pull the codebase down to the runner cloud node
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    # 2. Setup the stable Microsoft .NET 10 SDK
+    - name: Setup .NET 10 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    # 3. Restore all project dependencies
+    - name: Restore NuGet Dependencies
+      run: dotnet restore MusicRoadmap.sln
+
+    # 4. Compile the solution matrix in Release mode
+    - name: Compile Solution Mappings
+      run: dotnet build MusicRoadmap.sln --configuration Release --no-restore
+
+    # 5. Run the xUnit Multi-Tenant Isolation Tests (Quality Gate)
+    - name: Execute Automated xUnit Tests
+      run: dotnet test MusicRoadmap.IntegrationTests/MusicRoadmap.IntegrationTests.csproj --configuration Release --no-build --verbosity normal
+
+    # 6. AUTHENTICATE AZURE CONTAINER REGISTRY SECURELY
+    # This reads the hardware keys you just saved into your dashboard settings!
+    - name: Authenticate with Azure Container Registry (ACR)
+      uses: azure/docker-login@v2
+      with:
+        login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+
+    # 7. COMPILE AND PUSH PRODUCTION BACKEND API CONTAINER IMAGE
+    - name: Build and Push API Image to ACR
+      run: |
+        docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/music-api:latest -f MusicRoadmap.Api/Dockerfile .
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/music-api:latest
+
+    # 8. COMPILE AND PUSH REVERSE-PROXY CLIENT NGINX IMAGE
+    - name: Build and Push Client Image to ACR
+      run: |
+        docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/music-client:latest -f MusicRoadmap.Client/Dockerfile .
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/music-client:latest

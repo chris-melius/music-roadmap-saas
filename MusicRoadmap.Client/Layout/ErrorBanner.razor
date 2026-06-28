@@ -1,0 +1,34 @@
+@using MusicRoadmap.Shared.DTOs
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger d-flex align-items-start alert-dismissible fade show my-3 shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+        <div>
+            <h5 class="alert-heading fw-bold">Server Operational Error</h5>
+            <p class="mb-1">@ErrorMessage</p>
+            @if (!string.IsNullOrEmpty(DetailedError))
+            {
+                <hr class="my-2" />
+                <details>
+                    <summary class="text-muted small cursor-pointer">View Developer Stack Trace</summary>
+                    <pre class="mt-2 bg-dark text-light p-2 rounded small border border-secondary text-wrap" style="max-height: 200px; overflow-y: auto;">@DetailedError</pre>
+                </details>
+            }
+        </div>
+        <button type="button" class="btn-close" @onclick="ClearError" aria-label="Close"></button>
+    </div>
+}
+
+@code {
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public string? DetailedError { get; set; }
+    [Parameter] public EventCallback OnClear { get; set; }
+
+    private async Task ClearError()
+    {
+        ErrorMessage = null;
+        DetailedError = null;
+        await OnClear.InvokeAsync();
+    }
+}

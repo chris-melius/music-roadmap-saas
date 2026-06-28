@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  music-api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=db;Database=MusicRoadmapDB;User ID=sa;Password=YOUR_LOCAL_DEV_PASSWORD_HERE;TrustServerCertificate=True;Connection Timeout=60;
+      - Jwt__Key=LOCAL_DEV_SECRET_KEY_PLACEHOLDER_MIN_32_CHARS_LONG_12345
+      - Jwt__Issuer=http://localhost:5213
+      - Jwt__Audience=http://localhost:5001
+      - AdminSettings__AllowedIp=YOUR_DEVELOPER_IP_ADDRESS_HERE
+      - OpenAI__ApiKey=YOUR_DEVELOPER_OPENAI_KEY_HERE
+
+  db:
+    user: root
+    environment:
+      - MSSQL_SA_PASSWORD=YOUR_LOCAL_DEV_PASSWORD_HERE

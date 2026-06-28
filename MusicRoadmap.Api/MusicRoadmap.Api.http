@@ -1,0 +1,22 @@
+@MusicRoadmap.Api_HostAddress = http://localhost:5213
+
+### 1. Diagnostic Health Check
+GET {{MusicRoadmap.Api_HostAddress}}/health
+Accept: application/json
+
+### 2. Multi-Tenant Login Attempt (Returns Hashed Session Tokens)
+POST {{MusicRoadmap.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "teacher@example.com",
+  "password": "Password123!"
+}
+
+### 3. Secure Token Refresh Rotation Exchange
+POST {{MusicRoadmap.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "YOUR_RAW_CLIENT_TOKEN_HERE"
+}

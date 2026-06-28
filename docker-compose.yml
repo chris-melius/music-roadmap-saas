@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  music-client:
+    build:
+      context: .
+      dockerfile: MusicRoadmap.Client/Dockerfile
+    ports:
+      - "5001:80"
+    depends_on:
+      - music-api
+
+  music-api:
+    build:
+      context: .
+      dockerfile: MusicRoadmap.Api/Dockerfile
+    ports:
+      - "5213:8080"
+    depends_on:
+      - db
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+    volumes:
+      - mssql-data:/var/opt/mssql/data
+
+volumes:
+  mssql-data:

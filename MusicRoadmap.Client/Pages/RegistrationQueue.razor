@@ -1,0 +1,137 @@
+@page "/review-queue"
+@using MusicRoadmap.Shared.DTOs
+@attribute [Authorize]
+@inject HttpClient Http
+
+<div class="container mt-5">
+    <div class="mb-4">
+        <h2 class="fw-bold mb-1"><i class="bi bi-clipboard-check-fill text-warning me-2"></i>Registration Queue</h2>
+        <p class="text-muted">Review and accept prospective family enrollments incoming from your public website form.</p>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border text-warning" role="status"></div>
+        </div>
+    }
+    else if (!registrations.Any())
+    {
+        <div class="card text-center p-5 border-0 shadow-sm bg-light">
+            <div class="card-body">
+                <i class="bi bi-inbox-fill text-muted display-4 mb-3"></i>
+                <h5>Queue is Empty</h5>
+                <p class="text-muted mb-0">All external registrations have been processed. Great job!</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        @foreach (var reg in registrations)
+        {
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light border-0 py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-bold fs-5 text-dark">@reg.ContactName</span>
+                        <span class="text-muted ms-2 small">Submitted @reg.SubmittedAt.ToLocalTime().ToString("g")</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-success px-3" @onclick="() => Approve(reg.AccountHolderId)" disabled="@isProcessing">
+                            <i class="bi bi-check-lg me-1"></i> Approve
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Reject(reg.AccountHolderId)" disabled="@isProcessing">
+                            <i class="bi bi-x-lg"></i> Reject
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <span class="text-muted small d-block">Email Address</span>
+                            <a href="mailto:@reg.Email" class="fw-semibold text-decoration-none">@reg.Email</a>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted small d-block">Phone Number</span>
+                            <span class="fw-semibold">@reg.Phone</span>
+                        </div>
+                    </div>
+                    
+                    <h6 class="fw-bold border-bottom pb-2 mb-3 text-secondary"><i class="bi bi-person-bounding-box me-2"></i>Applying Students</h6>
+                    <div class="row row-cols-1 row-cols-md-2 g-3">
+                        @foreach (var student in reg.Students)
+                        {
+                            <div class="col">
+                                <div class="p-3 border rounded bg-light-subtle">
+                                    <div class="fw-bold text-primary">@student.StudentName</div>
+                                    <div class="small text-muted">@student.Instrument &bull; @student.SkillLevel</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<PendingRegistrationDto> registrations = new();
+    private bool isLoading = true;
+    private bool isProcessing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadQueue();
+    }
+
+    private async Task LoadQueue()
+    {
+        isLoading = true;
+        try
+        {
+            registrations = await Http.GetFromJsonAsync<List<PendingRegistrationDto>>("api/instructor/review/pending") ?? new();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Queue load exception: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Approve(string id)
+    {
+        isProcessing = true;
+        try
+        {
+            var response = await Http.PatchAsync($"api/instructor/review/approve/{id}", null);
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadQueue();
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task Reject(string id)
+    {
+        isProcessing = true;
+        try
+        {
+            var response = await Http.DeleteAsync($"api/instructor/review/reject/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadQueue();
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+}

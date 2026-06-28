@@ -1,0 +1,59 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@using Blazored.LocalStorage
+@using MusicRoadmap.Client.Security
+
+@attribute [AllowAnonymous]
+
+@inject ILocalStorageService BrowserStorage
+@inject HttpClient ApiHttp
+@inject NavigationManager NavManager
+@inject CustomAuthenticationStateProvider AuthStateProvider
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <AuthorizeView>
+                <Authorized>
+                    <button type="button"
+                            class="btn btn-outline-danger btn-sm ms-3"
+                            @onclick="OnLogoutClicked">
+                        <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+                    </button>
+                </Authorized>
+            </AuthorizeView>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code {
+    private async Task OnLogoutClicked()
+    {
+        try
+        {
+            var rawRefreshToken = await BrowserStorage.GetItemAsync<string>("refreshToken");
+
+            if (!string.IsNullOrEmpty(rawRefreshToken))
+            {
+                await ApiHttp.PostAsJsonAsync("api/auth/logout", new { RefreshToken = rawRefreshToken });
+            }
+        }
+        catch
+        {
+            // Still clear client session if API is unreachable
+        }
+        finally
+        {
+            await AuthStateProvider.NotifyUserLogoutAsync();
+            NavManager.NavigateTo("/login", forceLoad: true);
+        }
+    }
+}

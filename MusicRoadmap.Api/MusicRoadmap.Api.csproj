@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>0775a0a0-f824-41d4-bbdf-fe292405ceec</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.*" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.75.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.75.0" />
+    <PackageReference Include="QuestPDF" Version="2026.2.4" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.14.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MusicRoadmap.Infrastructure\MusicRoadmap.Infrastructure.csproj" />
+    <ProjectReference Include="..\MusicRoadmap.Domain\MusicRoadmap.Domain.csproj" />
+    <ProjectReference Include="..\MusicRoadmap.Shared\MusicRoadmap.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

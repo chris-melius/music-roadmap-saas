@@ -1,0 +1,42 @@
+# CRITICAL SECURITY OVERRIDES
+docker-compose.override.yml
+
+## .NET Core Compiler Trash
+bin/
+obj/
+*.suo
+*.user
+*.VisualStudio.git_history
+
+## IDE Workspace Caching Vaults
+.vs/
+.idea/
+*.sln.docstates
+
+# DO NOT check your active persistent container DB files into source control!
+/mssql-data/
+
+## Local App Settings Secrets
+# This keeps your live OpenAI keys and local DB strings safely on your computer
+MusicRoadmap.Api/appsettings.Development.json
+
+# Third-party Asset Distributions
+MusicRoadmap.Client/wwwroot/lib/
+
+# =========================================================================
+#  SECURITY PERIMETER & SECRET SCANNING FUTURE-PROOFING
+# =========================================================================
+# Block raw text environment configuration dumps
+.env
+.env.*
+!.env.example
+
+# Block accidental production file commits
+**/appsettings.Production.json
+
+# Block duplicate .NET user secrets exposures
+**/secrets.json
+
+# Block cryptographic keys and SSL certificates
+*.pem
+*.pfx

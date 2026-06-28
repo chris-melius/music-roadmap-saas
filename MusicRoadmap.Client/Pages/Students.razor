@@ -1,0 +1,184 @@
+@page "/students"
+@using Microsoft.AspNetCore.Authorization;
+@using MusicRoadmap.Domain.Entities
+@using MusicRoadmap.Client.Services
+@using MusicRoadmap.Shared.DTOs
+
+@attribute [Authorize]
+@inject StudentService StudentService
+@inject IJSRuntime JSRuntime
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Student Roster</h3>
+    <a href="add-student" class="btn btn-success">
+        <span class="bi bi-person-plus-fill"></span> Add Student
+    </a>
+</div>
+
+<ErrorBanner ErrorMessage="@uiErrorMessage" DetailedError="@uiDetailedError" OnClear="ResetUiError" />
+
+
+@if (students == null && string.IsNullOrEmpty(uiErrorMessage))
+{
+    <div class="text-center mt-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading student roster...</p>
+    </div>
+}
+else if (students != null)
+{
+    if (!students.Any())
+    {
+        <div class="alert alert-info mt-3" role="alert">
+            <span class="bi bi-info-circle-fill"></span> No students added yet. Click "Add Student" to begin!
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Skill Level</th>
+                        <th>Practice Goal</th>
+                        <th>Target Piece</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var student in students)
+                    {
+                        <tr>
+                            <td class="fw-bold">@student.FirstName @student.LastName</td>
+                            <td>
+                                <span class="badge bg-primary">Level @student.SkillLevel</span>
+                            </td>
+                            <td>@student.MinutesPerWeekCommitment mins/wk</td>
+                            <td>@(string.IsNullOrEmpty(student.TargetPieces) ? "Not set" : student.TargetPieces)</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-2">
+                                    <span class="bi bi-eye-fill"></span> View
+                                </button>
+                                <button class="btn btn-sm btn-primary" 
+                                        @onclick="() => HandleGeneratePdf(student.Id)" 
+                                        disabled="@isGenerating">
+                                    @if (isGenerating && activeStudentId == student.Id)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        <span>Generating...</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-robot me-1"></i><span>AI Roadmap</span>
+                                    }
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    private List<Student>? students;
+    private IJSObjectReference? _module;
+
+        // UI Error Binding Fields
+    private string? uiErrorMessage;
+    private string? uiDetailedError;
+
+    private bool isGenerating = false;
+    private string? activeStudentId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try{
+            ResetUiError();
+            students = await StudentService.GetStudentsAsync();
+        }
+        catch (HttpRequestException ex)
+            {
+                // The exception message now contains your custom server message!
+                uiErrorMessage = ex.Message;
+                uiDetailedError = ex.StackTrace;
+            }
+        catch (Exception ex)
+            {
+                uiErrorMessage = "An unexpected rendering error occurred.";
+                uiDetailedError = ex.ToString();
+            } 
+    }
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Load the script only for THIS page
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/roadmapHelpers.js?v=" + Guid.NewGuid().ToString());
+
+        }
+    }
+
+private async Task HandleGeneratePdf(string studentId)
+    {
+        // 1. Start Loading State
+        isGenerating = true;
+        activeStudentId = studentId;
+
+        try 
+        {
+            // 2. The long-running AI & Network call
+            var pdfBytes = await StudentService.GetRoadmapPdfAsync(studentId);
+
+            if (pdfBytes != null && pdfBytes.Length > 0)
+            {
+                using var stream = new MemoryStream(pdfBytes);
+                using var streamRef = new DotNetStreamReference(stream);
+
+                if (_module is not null)
+                {
+                    await _module.InvokeVoidAsync("openPdfStream", "Roadmap.pdf", streamRef);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Generation failed: {ex.Message}");
+            // Optional: Add a UI toast/alert here
+        }
+        finally 
+        {
+            // 3. Always stop loading state
+            isGenerating = false;
+            activeStudentId = null;
+        }
+    }
+
+    // Standard cleanup pattern for modules
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null) await _module.DisposeAsync();
+    }
+
+    private void OnGenerateRoadmap(string studentId)
+    {
+        Nav.NavigateTo($"http://localhost:5213/api/roadmaps/generate/{studentId}", forceLoad: true);
+    }
+
+    private void ResetUiError()
+    {
+        uiErrorMessage = null;
+        uiDetailedError = null;
+    }    
+}

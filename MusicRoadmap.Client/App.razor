@@ -1,0 +1,37 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(Program).Assembly">
+        <Found Context="routeData">
+            @* AuthorizeRouteView is the key: it checks if the user has permission for the page *@
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    @* This is what the user sees if they try to access a [Authorize] page while logged out *@
+                    <div class="container mt-5">
+                        <div class="alert alert-warning shadow-sm text-center">
+                            <h5><i class="bi bi-lock-fill me-2"></i> Access Denied</h5>
+                            <p>You must be logged in to view this page.</p>
+                            <a href="/login" class="btn btn-primary mt-2">Go to Login</a>
+                        </div>
+                    </div>
+                </NotAuthorized>
+                <Authorizing>
+                    @* Shown momentarily while the CustomAuthStateProvider checks LocalStorage *@
+                    <div class="text-center mt-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2">Checking credentials...</p>
+                    </div>
+                </Authorizing>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>Not found</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <div class="container mt-5 text-center">
+                    <h1>404</h1>
+                    <p>Sorry, there's nothing at this address.</p>
+                </div>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
