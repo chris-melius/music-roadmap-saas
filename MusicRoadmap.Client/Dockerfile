@@ -12,6 +12,15 @@ COPY . .
 WORKDIR "/src/MusicRoadmap.Client"
 RUN dotnet build "MusicRoadmap.Client.csproj" -c Release -o /app/build
 
+# Install Microsoft Library Manager CLI tool inside the build image context
+RUN dotnet tool install --global Microsoft.Web.LibraryManager.Cli
+
+# Ensure the global tools path is registered in environment memory
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
+# Restore all CSS and JS client-side library dependencies cleanly before compilation!
+RUN libman restore
+
 # Publish static HTML/WASM outputs
 FROM build AS publish
 RUN dotnet publish "MusicRoadmap.Client.csproj" -c Release -o /app/publish
