@@ -19,6 +19,7 @@ obj/
 ## Local App Settings Secrets
 # This keeps your live OpenAI keys and local DB strings safely on your computer
 MusicRoadmap.Api/appsettings.Development.json
+MusicRoadmap.Client/wwwroot/appsettings.Development.json
 
 # Third-party Asset Distributions
 MusicRoadmap.Client/wwwroot/lib/
